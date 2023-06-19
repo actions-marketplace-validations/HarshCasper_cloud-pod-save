@@ -1,0 +1,43 @@
+name: 'Save a LocalStack Cloud Pod'
+description: 'GitHub Action wrapper to save your Cloud Pods'
+author: 'Harsh Mishra'
+
+branding:
+  icon: 'code'
+  color: 'white'
+
+inputs:
+  name:
+    description: 'Name of the Cloud Pod'
+    required: true
+    default: 'cloud-pod'
+  directory:
+    description: 'Name of the specific directory you want to save the Cloud Pod in'
+    required: false
+    default: ''
+  location:
+    description: 'Name of the specific location (disk/platform) you want to save the Cloud Pod in'
+    required: true
+    default: 'platform'
+
+runs:
+  using: "composite"
+  steps:
+    - 
+      run: |
+        if [ "$LOCATION" = "disk" ]; then
+          if [ -z "$DIRECTORY" ]; then
+            command="localstack pod save $(pwd)/$NAME"
+          else
+            command="localstack pod save $(pwd)/$DIRECTORY/$NAME"
+          fi
+        else
+          command="localstack pod save $NAME"
+        fi
+
+        eval $command
+      shell: bash
+      env:
+        LOCATION: "${{ inputs.location }}"
+        DIRECTORY: "${{ inputs.directory }}"
+        NAME: "${{ inputs.name }}"
