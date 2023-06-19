@@ -18,7 +18,7 @@ inputs:
   location:
     description: 'Name of the specific location (disk/platform) you want to save the Cloud Pod in'
     required: true
-    default: 'platform'
+    default: 'disk'
 
 runs:
   using: "composite"
