@@ -1,0 +1,75 @@
+name: Test the Action
+
+on: [ push, pull_request ]
+
+jobs:
+  test-disk-cloud-pod:
+    name: Cloud Pod Save on Disk
+    runs-on: ubuntu-latest
+    steps:
+      - name: ⚡️ Checkout the repository
+        uses: actions/checkout@v3
+
+      - name: Start LocalStack
+        uses: LocalStack/setup-localstack@v0.1.2
+        with:
+          image-tag: 'latest'
+          install-awslocal: 'true'
+
+      - name: Save LocalStack CLI version
+        id: version
+        run: |
+          VERSION=$(localstack --version)
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Run AWS commands
+        run: |
+          awslocal s3 mb s3://test
+          awslocal sqs create-queue --queue-name test-queue
+          awslocal sns create-topic --name test-topic
+
+      - name: Save the Cloud Pod 
+        uses: ./
+        with:
+          name: test-pod-${{ steps.version.outputs.version }}
+          location: disk
+
+      - name: Save the artifact 
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-pod-${{ steps.version.outputs.version }}
+          path: test-pod-${{ steps.version.outputs.version }}
+
+  test-platform-cloud-pod:
+    name: Cloud Pod Save on Platform
+    runs-on: ubuntu-latest
+    steps:
+      - name: ⚡️ Checkout the repository
+        uses: actions/checkout@v3
+
+      - name: Start LocalStack
+        uses: LocalStack/setup-localstack@v0.1.2
+        with:
+          image-tag: 'latest'
+          install-awslocal: 'true'
+          use-pro: 'true'
+        env:
+          LOCALSTACK_API_KEY: ${{ secrets.LOCALSTACK_API_KEY }}
+
+      - name: 🤔 Login to LocalStack
+        uses: LocalStack/localstack-github-actions-login@v0.1.0
+        with:
+          email: ${{ secrets.LOCALSTACK_USERNAME }}
+          password: ${{ secrets.LOCALSTACK_PASSWORD }}
+
+      - name: Run AWS commands
+        run: |
+          awslocal s3 mb s3://test
+          awslocal sqs create-queue --queue-name test-queue
+          awslocal sns create-topic --name test-topic
+
+      - name: Save the Cloud Pod 
+        uses: ./
+        with:
+          name: platform-test-pod
+          location: platform
